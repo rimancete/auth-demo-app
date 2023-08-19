@@ -11,7 +11,21 @@ export async function authenticate(mode, email, password) {
     returnSecureToken: true,
   });
 
-  return response.data;
+  let userData = response.data;
+
+  const refreshToken = userData.refreshToken;
+
+  const refreshTokenUrl = `https://securetoken.googleapis.com/v1/token?key=${API_KEY}`;
+
+  const responseRefreshToken = await axios.post(refreshTokenUrl, {
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  });
+
+  const idTokenRefreshed = responseRefreshToken.data.id_token;
+
+  userData = { ...userData, idToken: idTokenRefreshed };
+  return userData;
 }
 
 export function createUser(email, password) {

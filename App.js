@@ -1,7 +1,10 @@
+import { useCallback, useEffect, useState } from "react";
+import { View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SplashScreen from 'expo-splash-screen';
 
 import LoginScreen from "./screens/LoginScreen";
 import SignupScreen from "./screens/SignupScreen";
@@ -10,7 +13,8 @@ import { Colors } from "./constants/styles";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 import IconButton from "./components/ui/IconButton";
-import { useEffect } from "react";
+
+// SplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator();
 
@@ -72,19 +76,36 @@ function Navigation() {
 
 function Root() {
   const { updateUser } = useAuth();
+  const [appIsloading, setAppIsLoading] = useState(true);
 
   useEffect(() => {
     async function getStoredToken() {
       const storedToken = await AsyncStorage.getItem("token");
       if (storedToken)
-      updateUser((currentUserData) => {
+        updateUser((currentUserData) => {
           return { ...currentUserData, idToken: storedToken };
         });
+
+        setAppIsLoading(false);
     }
     getStoredToken();
   }, []);
 
-  return <Navigation />;
+  const onLayoutRootView = useCallback(async () => {
+    if (!appIsloading) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsloading]);
+ 
+  if (appIsloading) {
+    return null;
+  }
+ 
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <Navigation />
+    </View>
+  );
 }
 
 export default function App() {
